@@ -10,17 +10,49 @@ if Code.ensure_loaded?(Mariaex) do
       Mariaex.child_spec(opts)
     end
 
+    ## Helpers
+    defp inject_params_to_statement(statement, [first | rest]) do
+      upd_statement = String.replace(statement, "?", encode_text_param(first), [global: false])
+      inject_params_to_statement(upd_statement, rest)
+    end
+    defp inject_params_to_statement(statement, []) do
+      statement
+    end
+
+    defp encode_text_param(nil), do: "NULL"
+    defp encode_text_param(bool) when is_boolean(bool), do: to_string(bool)
+    defp encode_text_param(int) when is_integer(int), do: to_string(int)
+    defp encode_text_param(float) when is_float(float), do: to_string(float)
+    defp encode_text_param(string) when is_binary(string), do: "'" <> string <> "'"
+    defp encode_text_param({y, m, d}), do: to_string(:io_lib.format("'~4..0b-~2..0b-~2..0b'", [y, m, d]))
+    defp encode_text_param({{y, m, d}, {h, mi, s, ms}}) when is_integer(s), do: encode_text_param({{y, m, d}, {h, mi, s}})
+    defp encode_text_param({{y, m, d}, {h, mi, s}}) when is_integer(s) do
+      to_string(
+        :io_lib.format(
+          "'~4..0b-~2..0b-~2..0b ~2..0b:~2..0b:~2..0b'",
+          [y, m, d, h, mi, s]
+        )
+      )
+    end
+
+
     ## Query
 
-    def prepare_execute(conn, name, sql, params, opts) do
-      query = %Mariaex.Query{name: name, statement: sql}
-      DBConnection.prepare_execute(conn, query, map_params(params), opts)
+    def prepare_execute(conn, _name, sql, params, opts) do
+      # query = %Mariaex.Query{name: name, statement: sql}
+      # DBConnection.prepare_execute(conn, query, map_params(params), opts)
+      execute(conn, sql, params, opts)
     end
 
     def execute(conn, sql, params, opts) when is_binary(sql) or is_list(sql) do
-      query = %Mariaex.Query{name: "", statement: sql}
-      case DBConnection.prepare_execute(conn, query, map_params(params), opts) do
-        {:ok, _, query} -> {:ok, query}
+      # query = %Mariaex.Query{name: "", statement: sql}
+      # case DBConnection.prepare_execute(conn, query, map_params(params), opts) do
+      #   {:ok, _, query} -> {:ok, query}
+      #   {:error, _} = err -> err
+      # end
+      statement = inject_params_to_statement(sql, params)
+      case Mariaex.query(conn, statement, [], [query_type: :text]) do
+        {:ok, _, result} -> {:ok, result}
         {:error, _} = err -> err
       end
     end
