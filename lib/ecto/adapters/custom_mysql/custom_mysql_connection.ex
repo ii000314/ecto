@@ -12,12 +12,17 @@ if Code.ensure_loaded?(Mariaex) do
 
     ## Query
 
-    def prepare_execute(conn, _name, sql, params, opts) do
-      execute(conn, sql, params, opts)
+    def prepare_execute(conn, name, sql, params, opts) do
+      query = %Mariaex.Query{name: name, statement: sql}
+      DBConnection.prepare_execute(conn, query, map_params(params), opts)
     end
 
     def execute(conn, sql, params, opts) when is_binary(sql) or is_list(sql) do
-      Mariaex.query(conn, sql, map_params(params), Keyword.put(opts, :query_type, :text))
+      query = %Mariaex.Query{name: "", statement: sql}
+      case DBConnection.prepare_execute(conn, query, map_params(params), opts) do
+        {:ok, _, query} -> {:ok, query}
+        {:error, _} = err -> err
+      end
     end
 
     def execute(conn, %{} = query, params, opts) do
