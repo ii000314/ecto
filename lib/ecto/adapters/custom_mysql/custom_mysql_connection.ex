@@ -52,7 +52,10 @@ if Code.ensure_loaded?(Mariaex) do
       # end
       statement = inject_params_to_statement(sql, params)
       query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
-      DBConnection.execute(conn, query, [], opts)
+      case DBConnection.execute(conn, query, [], opts) do
+        {:ok, result} -> {:ok, query, result}
+        {:error, reason} -> {:error, reason}
+      end
     end
 
     def execute(conn, %{} = query, params, opts) do
