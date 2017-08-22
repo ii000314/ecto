@@ -25,7 +25,7 @@ if Code.ensure_loaded?(Mariaex) do
     defp encode_text_param(float) when is_float(float), do: to_string(float)
     defp encode_text_param(string) when is_binary(string), do: "'" <> string <> "'"
     defp encode_text_param({y, m, d}), do: to_string(:io_lib.format("'~4..0b-~2..0b-~2..0b'", [y, m, d]))
-    defp encode_text_param({{y, m, d}, {h, mi, s, ms}}) when is_integer(s), do: encode_text_param({{y, m, d}, {h, mi, s}})
+    defp encode_text_param({{y, m, d}, {h, mi, s, _ms}}) when is_integer(s), do: encode_text_param({{y, m, d}, {h, mi, s}})
     defp encode_text_param({{y, m, d}, {h, mi, s}}) when is_integer(s) do
       to_string(
         :io_lib.format(
@@ -51,7 +51,8 @@ if Code.ensure_loaded?(Mariaex) do
       #   {:error, _} = err -> err
       # end
       statement = inject_params_to_statement(sql, params)
-      case Mariaex.query(conn, statement, [], [query_type: :text]) do
+      query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
+      case DBConnection.execute(conn, query, [], opts) do
         {:ok, _, result} -> {:ok, result}
         {:error, _} = err -> err
       end
