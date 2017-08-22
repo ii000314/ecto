@@ -41,6 +41,12 @@ if Code.ensure_loaded?(Mariaex) do
     def prepare_execute(conn, _name, sql, params, opts) do
       # query = %Mariaex.Query{name: name, statement: sql}
       # DBConnection.prepare_execute(conn, query, map_params(params), opts)
+      statement = inject_params_to_statement(sql, params)
+      query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
+      case DBConnection.execute(conn, query, [], opts) do
+        {:ok, result} -> {:ok, query, result}
+        {:error, reason} -> {:error, reason}
+      end
       execute(conn, sql, params, opts)
     end
 
@@ -50,10 +56,8 @@ if Code.ensure_loaded?(Mariaex) do
       #   {:ok, _, query} -> {:ok, query}
       #   {:error, _} = err -> err
       # end
-      statement = inject_params_to_statement(sql, params)
-      query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
-      case DBConnection.execute(conn, query, [], opts) do
-        {:ok, result} -> {:ok, query, result}
+      case prepare_execute(conn, "", sql, params, opts) do
+        {:ok, _, result} -> {:ok, result}
         {:error, reason} -> {:error, reason}
       end
     end
