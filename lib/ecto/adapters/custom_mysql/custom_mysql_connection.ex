@@ -53,8 +53,8 @@ if Code.ensure_loaded?(Mariaex) do
       statement = inject_params_to_statement(sql, params)
       query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
       case DBConnection.execute(conn, query, [], opts) do
-        {:ok, _, result} -> {:ok, result}
-        {:error, _} = err -> err
+        {:ok, result} -> {:ok, result}
+        {:error, reason} -> {:error, reason}
       end
     end
 
