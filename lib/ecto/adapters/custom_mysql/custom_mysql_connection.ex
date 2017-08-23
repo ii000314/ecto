@@ -23,6 +23,7 @@ if Code.ensure_loaded?(Mariaex) do
     defp encode_text_param(bool) when is_boolean(bool), do: to_string(bool)
     defp encode_text_param(int) when is_integer(int), do: to_string(int)
     defp encode_text_param(float) when is_float(float), do: to_string(float)
+    defp encode_text_param(map) when is_map(map), do: "'" <> Poison.encode!(map) <> "'"
     defp encode_text_param(string) when is_binary(string), do: "'" <> string <> "'"
     defp encode_text_param({y, m, d}), do: to_string(:io_lib.format("'~4..0b-~2..0b-~2..0b'", [y, m, d]))
     defp encode_text_param({{y, m, d}, {h, mi, s, _ms}}) when is_integer(s), do: encode_text_param({{y, m, d}, {h, mi, s}})
