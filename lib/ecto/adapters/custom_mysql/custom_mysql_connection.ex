@@ -12,7 +12,6 @@ if Code.ensure_loaded?(Mariaex) do
 
     ## Helpers
     defp inject_params_to_statement(statement, [first | rest]) do
-      statement = String.replace(statement, "?", ">|{", [global: true])
       upd_statement = String.replace(statement, ">|{", encode_text_param(first), [global: false])
       inject_params_to_statement(upd_statement, rest)
     end
@@ -43,7 +42,8 @@ if Code.ensure_loaded?(Mariaex) do
     def prepare_execute(conn, _name, sql, params, opts) do
       # query = %Mariaex.Query{name: name, statement: sql}
       # DBConnection.prepare_execute(conn, query, map_params(params), opts)
-      statement = inject_params_to_statement(sql, params)
+      adopted_sql = String.replace(sql, "?", ">|{", [global: true])
+      statement = inject_params_to_statement(adopted_sql, params)
       query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
       case DBConnection.execute(conn, query, [], opts) do
         {:ok, result} -> {:ok, query, result}
