@@ -12,7 +12,8 @@ if Code.ensure_loaded?(Mariaex) do
 
     ## Helpers
     defp inject_params_to_statement(statement, [first | rest]) do
-      upd_statement = String.replace(statement, "?", encode_text_param(first), [global: false])
+      statement = String.replace(statement, "?", ">|{", [global: true])
+      upd_statement = String.replace(statement, ">|{", encode_text_param(first), [global: false])
       inject_params_to_statement(upd_statement, rest)
     end
     defp inject_params_to_statement(statement, []) do
