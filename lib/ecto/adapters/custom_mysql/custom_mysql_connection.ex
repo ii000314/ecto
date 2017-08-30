@@ -57,7 +57,8 @@ if Code.ensure_loaded?(Mariaex) do
       #   {:ok, _, query} -> {:ok, query}
       #   {:error, _} = err -> err
       # end
-      statement = inject_params_to_statement(sql, params)
+      adopted_sql = String.replace(sql, "?", ">|{", [global: true])
+      statement = inject_params_to_statement(adopted_sql, params)
       query = %Mariaex.Query{type: :text, statement: statement, ref: make_ref(), num_params: 0}
       case DBConnection.execute(conn, query, [], opts) do
         {:ok, result} -> {:ok, result}
